@@ -65,7 +65,7 @@ if mode == "Client Chat":
                       f"Question: {user_question}")
             with st.spinner("AI is responding..."):
                 try:
-                    response = openai.ChatCompletion.create(
+                    response = openai.chat.completions.create(
                         model="gpt-3.5-turbo",
                         messages=[
                             {"role": "system", "content": "You are a professional government subsidy advisor."},
