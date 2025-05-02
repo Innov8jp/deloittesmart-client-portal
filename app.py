@@ -14,20 +14,20 @@ st.set_page_config(
 # --- OPENAI SETUP ---
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-# --- HELPER: Clean text for PDF ---
+# --- HELPER: Sanitize text for PDF ---
 def safe_text(txt: str) -> str:
     reps = {'™':'(TM)','–':'-','≥':'>=','✓':'v','✔':'v'}
     for k, v in reps.items():
         txt = txt.replace(k, v)
     return txt.encode('latin1','ignore').decode('latin1')
 
-# --- REGISTRATION ---
+# --- REGISTRATION FLOW ---
 if "registered" not in st.session_state:
     st.session_state.registered = False
 
 if not st.session_state.registered:
     st.title("Welcome to DeloitteSmart™ Client Portal")
-    st.subheader("Register to get started")
+    st.subheader("Register to Get Started")
     name    = st.text_input("Your Name")
     email   = st.text_input("Your Email")
     company = st.text_input("Company Name")
@@ -35,10 +35,10 @@ if not st.session_state.registered:
         if not (name and email and company):
             st.error("Please fill in all fields.")
         else:
-            st.session_state.registered   = True
-            st.session_state.user_name    = name
-            st.session_state.user_email   = email
-            st.session_state.company_name = company
+            st.session_state.registered    = True
+            st.session_state.user_name     = name
+            st.session_state.user_email    = email
+            st.session_state.company_name  = company
             st.success(f"Registered as {name} ({company})!")
     st.stop()
 
@@ -49,22 +49,19 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("Secure | Intelligent | Personalized")
 
-# --- MAIN INTERFACE ---
-st.title(f"Hello {st.session_state.user_name} 👋")
-mode = st.radio("Mode:", ["Chat with AI", "Self-Check & Report"], index=0)
+# --- MAIN APP ---
+st.title(f"Hello {st.session_state.user_name}, welcome back!")
+mode = st.radio("Mode:", ["Chat with AI", "Eligibility Self-Check"], index=0)
 
-# --- CHAT MODE ---
 if mode == "Chat with AI":
+    # Chat flow
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
     st.subheader("Ask a question about subsidies")
-    question = st.text_input("Your question:")
-    if st.button("Send") and question:
-        prompt = (
-            "You are SubsidySmart™, an expert subsidy advisor. "
-            f"Question: {question}"
-        )
-        with st.spinner("Thinking..."):
+    q = st.text_input("Your question:")
+    if st.button("Send") and q:
+        prompt = f"You are SubsidySmart™, an expert subsidy advisor. Question: {q}"
+        with st.spinner("AI is responding..."):
             resp = openai.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
@@ -73,27 +70,26 @@ if mode == "Chat with AI":
                 ]
             )
         answer = resp.choices[0].message.content
-        st.session_state.chat_history.append((question, answer))
-    for q, a in reversed(st.session_state.chat_history):
-        st.markdown(f"**You:** {q}")
-        st.markdown(f"**AI:** {a}")
+        st.session_state.chat_history.append((q, answer))
+    for qq, aa in reversed(st.session_state.chat_history):
+        st.markdown(f"**You:** {qq}")
+        st.markdown(f"**AI:** {aa}")
         st.markdown("---")
 
-# --- SELF-CHECK & PDF REPORT MODE ---
 else:
-    st.subheader("Eligibility Self-Check")
+    # Self-check & PDF report flow
+    st.subheader("Eligibility Self-Check & Report")
     recipient = st.text_input("Your Email:", value=st.session_state.user_email)
     age       = st.radio("Company age?", ["<3 years","≥3 years"])
     industry  = st.multiselect("Industry", ["AI","IoT","Biotech","Green Energy","Other"])
     rd        = st.radio("R&D Budget?", ["<200K","≥200K"])
     exp       = st.radio("Export involvement?", ["No","Yes"])
     rev       = st.radio("Annual Revenue?", ["<500K","≥500K"])
-    emp       = st.slider("Employees", 1, 200, 10)
-    docs      = st.multiselect("Documents you have",
-                    ["Business Plan","Org Chart","Budget","Export Plan","Pitch Deck"])
+    emp       = st.slider("Number of Employees", 1, 200, 10)
+    docs      = st.multiselect("Documents you have", ["Business Plan","Org Chart","Budget","Export Plan","Pitch Deck"])
 
     if st.button("Calculate & Download Report"):
-        # scoring logic
+        # scoring
         score = 0
         score += 15 if age=="≥3 years" else 0
         score += 20 if any(i in industry for i in ["AI","IoT","Biotech","Green Energy"]) else 0
@@ -102,24 +98,24 @@ else:
         score += 10 if rev=="≥500K" else 0
         score += 10 if 5<=emp<=100 else 0
         score += len(docs)*2
-        status = "Highly Eligible" if score>=85 else ("Needs Review" if score>=65 else "Not Eligible")
+        status = "🟢 Highly Eligible" if score>=85 else ("🟡 Needs Review" if score>=65 else "🔴 Not Eligible")
 
         st.metric("Eligibility Score", f"{score}%")
         st.markdown(f"**{status}**")
 
-        # PDF generation
+        # build PDF
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Arial", size=12)
         pdf.cell(0, 10, safe_text("DeloitteSmart™ Subsidy Report"), ln=1, align='C')
         pdf.ln(5)
-        header = (
+        info = (
             f"Name: {st.session_state.user_name}\n"
             f"Company: {st.session_state.company_name}\n"
             f"Email: {recipient}\n"
             f"Score: {score}% - {status}"
         )
-        pdf.multi_cell(0, 8, safe_text(header))
+        pdf.multi_cell(0, 8, safe_text(info))
         pdf.ln(5)
         details = (
             f"Age: {age}\n"
@@ -133,5 +129,5 @@ else:
         pdf.multi_cell(0, 8, safe_text(details))
 
         data = pdf.output(dest="S").encode("latin-1")
-        filename = f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-        st.download_button("Download PDF Report", data=data, file_name=filename, mime="application/pdf")
+        fname = f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        st.download_button("Download PDF Report", data=data, file_name=fname, mime="application/pdf")
