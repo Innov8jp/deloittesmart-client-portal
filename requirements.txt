@@ -4,3 +4,4 @@ fpdf
 yagmail
 gspread
 google-auth
+pandas
