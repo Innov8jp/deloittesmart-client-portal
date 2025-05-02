@@ -1,4 +1,4 @@
-```python
+python
 import streamlit as st
 import openai
 from datetime import datetime
