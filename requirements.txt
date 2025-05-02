@@ -2,3 +2,5 @@ streamlit
 openai
 fpdf
 yagmail
+gspread
+google-auth
