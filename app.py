@@ -7,7 +7,6 @@ import os
 import csv
 import gspread
 from google.oauth2.service_account import Credentials
-
 # --- APP CONFIGURATION ---
 PAGE_TITLE = "DeloitteSmart™ Client Portal"
 PAGE_ICON = ":moneybag:"
