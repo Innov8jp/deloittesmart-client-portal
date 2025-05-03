@@ -33,7 +33,7 @@ if not st.session_state.registered:
     company = st.text_input("Company Name")
 
     def is_valid_email(e):
-        return re.match(r"[^@\s]+@[^@\s]+\.[^@\s]+", e)
+        return re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", e) is not None
 
     next_clicked = st.button("Register and Continue")
 
@@ -47,8 +47,8 @@ if not st.session_state.registered:
             st.session_state.user_name = name
             st.session_state.user_email = email
             st.session_state.company_name = company
-            st.success(f"Registered as {name} from {company}.")
-            st.experimental_rerun()
+            st.success(f"Registered as {name} from {company}. Please proceed.")
+            st.stop()
     st.stop()
 
 # --- SIDEBAR ---
