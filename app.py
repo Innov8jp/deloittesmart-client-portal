@@ -2,6 +2,7 @@ import streamlit as st
 import openai
 from datetime import datetime
 from fpdf import FPDF
+import re
 
 # --- CONFIGURATION ---
 st.set_page_config(
@@ -31,12 +32,16 @@ if not st.session_state.registered:
     email = st.text_input("Your Email")
     company = st.text_input("Company Name")
 
+    def is_valid_email(e):
+        return re.match(r"[^@\s]+@[^@\s]+\.[^@\s]+", e)
+
     next_clicked = st.button("Register and Continue")
 
     if next_clicked:
         if not (name and email and company):
             st.error("Please fill in all fields.")
-            st.stop()
+        elif not is_valid_email(email):
+            st.error("Please enter a valid email address.")
         else:
             st.session_state.registered = True
             st.session_state.user_name = name
