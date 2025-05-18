@@ -28,25 +28,22 @@ if "registered" not in st.session_state:
 if not st.session_state.registered:
     st.title("Welcome to DeloitteSmart™ Client Portal")
     st.subheader("Register to Get Started")
-    name = st.text_input("Your Name")
-    email = st.text_input("Your Email")
-    company = st.text_input("Company Name")
-
-    def is_valid_email(e):
-        return re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", e) is not None
+    name = st.text_input("Your Name (In-charge)", key="name")
+    company = st.text_input("Company Name", key="company")
+    address = st.text_area("Company Address (Japanese Format)", placeholder="e.g. 〒100-0005 東京都千代田区丸の内1丁目1-1 パレスビル")
+    email = st.text_input("Your Email (Optional)", key="email")
 
     next_clicked = st.button("Register and Continue")
 
     if next_clicked:
-        if not (name and email and company):
-            st.error("Please fill in all fields.")
-        elif not is_valid_email(email):
-            st.error("Please enter a valid email address.")
+        if not (name and company):
+            st.error("Please fill in all required fields: Name and Company.")
         else:
             st.session_state.registered = True
             st.session_state.user_name = name
             st.session_state.user_email = email
             st.session_state.company_name = company
+            st.session_state.address = address
             st.success(f"Registered as {name} from {company}. Please proceed.")
             st.stop()
     st.stop()
@@ -99,7 +96,19 @@ else:
     exp = st.radio("Export involvement?", ["No", "Yes"])
     rev = st.radio("Annual Revenue?", ["<500K", "≥500K"])
     emp = st.slider("Number of Employees", 1, 200, 10)
-    docs = st.multiselect("Documents you have", ["Business Plan", "Org Chart", "Budget", "Export Plan", "Pitch Deck"])
+    docs = st.multiselect(
+        "Documents you have / お持ちの書類",
+        [
+            "Business Plan / 事業計画書",
+            "Org Chart / 組織図",
+            "Budget / 予算書",
+            "Export Plan / 輸出計画書",
+            "Pitch Deck / ピッチ資料",
+            "Trial Balance / 残高計算表",
+            "Tax Return / 税務申告書",
+            "Tohon / 登記簿謝本"
+        ]
+    )
 
     if st.button("Calculate & Download Report"):
         score = 0
@@ -124,6 +133,7 @@ else:
         info = (
             f"Name: {st.session_state.user_name}\n"
             f"Company: {st.session_state.company_name}\n"
+            f"Address: {st.session_state.address}\n"
             f"Email: {recipient}\n"
             f"Score: {score}% - {status}"
         )
