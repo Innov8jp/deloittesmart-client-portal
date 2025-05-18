@@ -133,15 +133,15 @@ if mode == t("Chat with AI", "AIとチャット"):
 # --- ELIGIBILITY SELF-CHECK ---
 else:
     st.subheader(t("Eligibility Self-Check", "適格性の自己チェック"))
-    recipient = st.text_input("Email (Optional):", value=st.session_state.user_email)
-    age = st.radio("Company age:", ["<3 years", "≥3 years"])
-    industry = st.multiselect("Industry", ["AI", "IoT", "Biotech", "Green Energy", "Other"])
-    rd = st.radio("R&D Budget:", ["<200K", "≥200K"])
-    exp = st.radio("Export involvement:", ["No", "Yes"])
-    rev = st.radio("Annual Revenue:", ["<500K", "≥500K"])
-    emp = st.slider("Number of Employees", 1, 200, 10)
+    recipient = st.text_input(t("Email (Optional):", "メール（任意）："), value=st.session_state.user_email)
+    age = st.radio(t("Company age:", "会社設立年数："), ["<3 years", "≥3 years"])
+    industry = st.multiselect(t("Industry", "業種"), ["AI", "IoT", "Biotech", "Green Energy", "Other"])
+    rd = st.radio(t("R&D Budget:", "研究開発予算："), ["<200K", "≥200K"])
+    exp = st.radio(t("Export involvement:", "輸出の関与："), ["No", "Yes"])
+    rev = st.radio(t("Annual Revenue:", "年間収益："), ["<500K", "≥500K"])
+    emp = st.slider(t("Number of Employees", "従業員数"), 1, 200, 10)
     docs = st.multiselect(
-        "Documents you have / お持ちの書類",
+        t("Documents you have", "お持ちの書類"),
         [
             "Business Plan / 事業計画書",
             "Org Chart / 組織図",
@@ -154,7 +154,7 @@ else:
         ]
     )
 
-    if st.button("Calculate & Download Report"):
+    if st.button(t("Calculate & Download Report", "計算してレポートをダウンロード")):
         score = 0
         score += 15 if age == "≥3 years" else 0
         score += 20 if any(i in industry for i in ["AI", "IoT", "Biotech", "Green Energy"]) else 0
@@ -196,6 +196,6 @@ else:
 
         data = pdf.output(dest="S").encode("latin-1")
         fname = f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-        st.download_button("Download PDF Report", data=data, file_name=fname, mime="application/pdf")
+        st.download_button(t("Download PDF Report", "PDFレポートをダウンロード"), data=data, file_name=fname, mime="application/pdf")
 
 # --- END ---
