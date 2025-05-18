@@ -91,7 +91,8 @@ if mode == t("Chat with AI", "AIとチャット"):
         placeholder=t("e.g. What subsidies are available for AI startups?", "例：AIスタートアップ向けの補助金は？")
     )
 
-    if st.button(t("Send", "送信")) and q:
+    send_icon = st.button("🚀", key="send_btn")
+    if send_icon and q:
         prompt = f"You are SubsidySmart™, an expert subsidy advisor. Question: {q}"
         with st.container():
             if lottie_ai:
