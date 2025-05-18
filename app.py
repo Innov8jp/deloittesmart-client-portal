@@ -91,8 +91,8 @@ if mode == t("Chat with AI", "AIとチャット"):
         placeholder=t("e.g. What subsidies are available for AI startups?", "例：AIスタートアップ向けの補助金は？")
     )
 
-    send_icon = st.button("🚀", key="send_btn")
-    if send_icon and q:
+    send_clicked = st.button(t("Send", "送信"), key="send_btn")
+    if send_clicked and q:
         prompt = f"You are SubsidySmart™, an expert subsidy advisor. Question: {q}"
         with st.container():
             if lottie_ai:
@@ -129,5 +129,10 @@ if mode == t("Chat with AI", "AIとチャット"):
         if c2.button("👎", key=f"no{idx}"):
             st.session_state.feedback_entries.append({"helpful": False, "timestamp": datetime.now().isoformat()})
         st.markdown("---")
+
+# --- ELIGIBILITY SELF-CHECK ---
+else:
+    st.subheader(t("Eligibility Self-Check", "適格性の自己チェック"))
+    st.info(t("This feature is under construction. Please check back soon.", "この機能は現在開発中です。しばらくお待ちください。"))
 
 # --- END ---
