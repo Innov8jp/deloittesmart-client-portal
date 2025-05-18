@@ -1,3 +1,7 @@
 streamlit
 openai
 fpdf
+streamlit
+openai
+fpdf
+streamlit-lottie
