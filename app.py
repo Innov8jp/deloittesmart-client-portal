@@ -79,6 +79,13 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("🔒 Secure | 🤖 Intelligent | 🎯 Personalized")
 
+    # --- Feedback Analytics ---
+    yes_count = sum(1 for f in st.session_state.feedback_entries if f.get("helpful"))
+    no_count = sum(1 for f in st.session_state.feedback_entries if not f.get("helpful"))
+    st.markdown("### 🔍 Feedback Analytics")
+    st.metric("👍 Helpful", yes_count)
+    st.metric("👎 Not Helpful", no_count)
+
 # --- MAIN APP ---
 st.title(t("Hello", "こんにちは") + f" {st.session_state.user_name}, " + t("welcome back!", "おかえりなさい！"))
 mode = st.radio("Mode:", [t("Chat with AI", "AIとチャット"), t("Eligibility Self-Check", "適格性の自己チェック")], index=0)
