@@ -16,7 +16,7 @@ st.set_page_config(
 
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-# --- LOAD LOTTIE ANIMATION ---
+# --- LOAD LOTTIE ---
 def load_lottie_url(url):
     r = requests.get(url)
     if r.status_code != 200:
@@ -25,7 +25,7 @@ def load_lottie_url(url):
 
 lottie_ai = load_lottie_url("https://assets4.lottiefiles.com/packages/lf20_q5pk6p1k.json")
 
-# --- PDF CLEANING ---
+# --- UTILITY ---
 def safe_text(txt: str) -> str:
     reps = {'™': '(TM)', '–': '-', '≥': '>=', '✓': 'v', '✔': 'v'}
     for k, v in reps.items():
@@ -33,19 +33,14 @@ def safe_text(txt: str) -> str:
     return txt.encode('latin1', 'ignore').decode('latin1')
 
 # --- SESSION DEFAULTS ---
-if "registered" not in st.session_state:
-    st.session_state.registered = False
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
-if "feedback_entries" not in st.session_state:
-    st.session_state.feedback_entries = []
-if "language" not in st.session_state:
-    st.session_state.language = "English"
+for key in ["registered", "chat_history", "feedback_entries", "language"]:
+    if key not in st.session_state:
+        st.session_state[key] = False if key == "registered" else [] if "history" in key or "entries" in key else "English"
 
 # --- LANGUAGE TOGGLE ---
 st.session_state.language = st.sidebar.radio("🌐 Language / 言語", ["English", "日本語"], index=0)
 
-# --- TRANSLATION UTILITY ---
+# --- TRANSLATION ---
 def t(en, jp):
     return jp if st.session_state.language == "日本語" else en
 
@@ -53,10 +48,16 @@ def t(en, jp):
 if not st.session_state.registered:
     st.title("Welcome to DeloitteSmart™ Client Portal")
     st.subheader("Register to Get Started")
-    name = st.text_input(t("Your Name (In-charge)", "担当者名"), key="name")
-    company = st.text_input(t("Company Name", "会社名"), key="company")
-    address = st.text_area(t("Company Address (Japanese Format)", "会社の住所（日本形式）"), placeholder="〒100-0005 東京都千代田区丸の内1丁目1-1 パレスビル")
-    email = st.text_input(t("Your Email (Optional)", "メールアドレス（任意）"), key="email")
+
+    name = st.text_input(t("Your Name (In-charge)", "担当者名"))
+    company = st.text_input(t("Company Name", "会社名"))
+    placeholder = (
+        "e.g. 1-1-1 Marunouchi, Chiyoda-ku, Tokyo 100-0005"
+        if st.session_state.language == "English"
+        else "例: 〒100-0005 東京都千代田区丸の内1丁目1-1 パレスビル"
+    )
+    address = st.text_area(t("Company Address", "会社の住所"), placeholder=placeholder)
+    email = st.text_input(t("Your Email (Optional)", "メールアドレス（任意）"))
 
     if st.button(t("Register and Continue", "登録して続行")):
         if not (name and company):
@@ -82,6 +83,7 @@ with st.sidebar:
 st.title(t("Hello", "こんにちは") + f" {st.session_state.user_name}, " + t("welcome back!", "おかえりなさい！"))
 mode = st.radio("Mode:", [t("Chat with AI", "AIとチャット"), t("Eligibility Self-Check", "適格性の自己チェック")], index=0)
 
+# --- CHAT MODE ---
 if mode == t("Chat with AI", "AIとチャット"):
     st.subheader(t("Ask a question about subsidies", "補助金について質問する"))
     q = st.text_input(
@@ -96,6 +98,7 @@ if mode == t("Chat with AI", "AIとチャット"):
                 st_lottie(lottie_ai, height=180, key="ai-spinner")
             else:
                 st.info("Preparing AI response...")
+
             try:
                 resp = openai.chat.completions.create(
                     model="gpt-3.5-turbo",
@@ -108,13 +111,13 @@ if mode == t("Chat with AI", "AIとチャット"):
                     "I'm unable to answer that question at the moment. Please try again.",
                     "現在その質問には回答できません。もう一度お試しください。"
                 )
-                st.session_state.chat_history.append((q, answer))
             except Exception:
                 answer = t(
                     "I'm unable to answer that question at the moment. Please try again.",
                     "現在その質問には回答できません。もう一度お試しください。"
                 )
-                st.session_state.chat_history.append((q, answer))
+
+            st.session_state.chat_history.append((q, answer))
 
     for idx, (qq, aa) in enumerate(reversed(st.session_state.chat_history)):
         st.markdown(f"**You:** {qq}")
