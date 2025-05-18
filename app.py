@@ -9,7 +9,7 @@ import requests
 # --- CONFIGURATION ---
 st.set_page_config(
     page_title="DeloitteSmart™ Client Portal",
-    page_icon=":moneybag:",
+    page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -23,7 +23,7 @@ def load_lottie_url(url):
         return None
     return r.json()
 
-lottie_ai = load_lottie_url("https://assets10.lottiefiles.com/packages/lf20_touohxv0.json")
+lottie_ai = load_lottie_url("https://assets4.lottiefiles.com/packages/lf20_q5pk6p1k.json")
 
 # --- PDF CLEANING ---
 def safe_text(txt: str) -> str:
@@ -32,6 +32,10 @@ def safe_text(txt: str) -> str:
         txt = txt.replace(k, v)
     return txt.encode('latin1', 'ignore').decode('latin1')
 
+# --- TRANSLATION UTILITY ---
+def t(en, jp):
+    return en if st.session_state.get("language", "English") == "English" else jp
+
 # --- SESSION DEFAULTS ---
 if "registered" not in st.session_state:
     st.session_state.registered = False
@@ -39,26 +43,31 @@ if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 if "feedback_entries" not in st.session_state:
     st.session_state.feedback_entries = []
+if "language" not in st.session_state:
+    st.session_state.language = "English"
+
+# --- LANGUAGE TOGGLE ---
+st.session_state.language = st.sidebar.radio("🌐 Language / 言語", ["English", "日本語"], index=0)
 
 # --- REGISTRATION ---
 if not st.session_state.registered:
     st.title("Welcome to DeloitteSmart™ Client Portal")
     st.subheader("Register to Get Started")
-    name = st.text_input("Your Name (In-charge)", key="name")
-    company = st.text_input("Company Name", key="company")
-    address = st.text_area("Company Address (Japanese Format)", placeholder="〒100-0005 東京都千代田区丸の内1丁目1-1 パレスビル")
-    email = st.text_input("Your Email (Optional)", key="email")
+    name = st.text_input(t("Your Name (In-charge)", "担当者名"), key="name")
+    company = st.text_input(t("Company Name", "会社名"), key="company")
+    address = st.text_area(t("Company Address (Japanese Format)", "会社の住所（日本形式）"))
+    email = st.text_input(t("Your Email (Optional)", "メールアドレス（任意）"), key="email")
 
-    if st.button("Register and Continue"):
+    if st.button(t("Register and Continue", "登録して続行")):
         if not (name and company):
-            st.error("Please fill in all required fields: Name and Company.")
+            st.error(t("Please fill in all required fields: Name and Company.", "担当者名と会社名を入力してください。"))
         else:
             st.session_state.registered = True
             st.session_state.user_name = name
             st.session_state.user_email = email
             st.session_state.company_name = company
             st.session_state.address = address
-            st.success(f"Registered as {name} from {company}. Please proceed.")
+            st.success(t(f"Registered as {name} from {company}. Please proceed.", f"{company}の{name}として登録されました。"))
             st.stop()
     st.stop()
 
@@ -67,20 +76,19 @@ with st.sidebar:
     st.markdown(f"### {st.session_state.user_name}")
     st.markdown(f"#### {st.session_state.company_name}")
     st.markdown("---")
-    st.markdown("Secure | Intelligent | Personalized")
+    st.markdown("🔒 Secure | 🤖 Intelligent | 🎯 Personalized")
 
 # --- MAIN APP ---
-st.title(f"Hello {st.session_state.user_name}, welcome back!")
-mode = st.radio("Mode:", ["Chat with AI", "Eligibility Self-Check"], index=0)
+st.title(t("Hello", "こんにちは") + f" {st.session_state.user_name}, " + t("welcome back!", "おかえりなさい！"))
+mode = st.radio("Mode:", [t("Chat with AI", "AIとチャット"), t("Eligibility Self-Check", "適格性の自己チェック")], index=0)
 
-if mode == "Chat with AI":
-    st.subheader("Ask a question about subsidies")
-    q = st.text_input("Your question:")
+if mode == t("Chat with AI", "AIとチャット"):
+    st.subheader(t("Ask a question about subsidies", "補助金について質問する"))
+    q = st.text_input(t("Your question:", "あなたの質問："))
 
-    if st.button("Send") and q:
+    if st.button(t("Send", "送信")) and q:
         prompt = f"You are SubsidySmart™, an expert subsidy advisor. Question: {q}"
-        with st.spinner("🤖 Thinking like an AI consultant..."):
-            st_lottie(lottie_ai, height=200)
+        with st.spinner(t("🤖 Generating insights...", "🤖 回答を生成中...")):
             try:
                 resp = openai.chat.completions.create(
                     model="gpt-3.5-turbo",
@@ -90,6 +98,7 @@ if mode == "Chat with AI":
                     ]
                 )
                 answer = resp.choices[0].message.content
+                st_lottie(lottie_ai, height=180)
                 st.session_state.chat_history.append((q, answer))
             except Exception as e:
                 st.error(f"Error: {e}")
@@ -105,16 +114,16 @@ if mode == "Chat with AI":
         st.markdown("---")
 
 else:
-    st.subheader("Eligibility Self-Check & Report")
-    recipient = st.text_input("Your Email:", value=st.session_state.user_email)
-    age = st.radio("Company age?", ["<3 years", "≥3 years"])
-    industry = st.multiselect("Industry", ["AI", "IoT", "Biotech", "Green Energy", "Other"])
-    rd = st.radio("R&D Budget?", ["<200K", "≥200K"])
-    exp = st.radio("Export involvement?", ["No", "Yes"])
-    rev = st.radio("Annual Revenue?", ["<500K", "≥500K"])
-    emp = st.slider("Number of Employees", 1, 200, 10)
+    st.subheader(t("Eligibility Self-Check & Report", "適格性の自己チェックとレポート"))
+    recipient = st.text_input("Email:", value=st.session_state.user_email)
+    age = st.radio(t("Company age?", "会社の設立年数は？"), ["<3 years", "≥3 years"])
+    industry = st.multiselect(t("Industry", "業種"), ["AI", "IoT", "Biotech", "Green Energy", "Other"])
+    rd = st.radio(t("R&D Budget?", "研究開発予算は？"), ["<200K", "≥200K"])
+    exp = st.radio(t("Export involvement?", "輸出事業に関与していますか？"), ["No", "Yes"])
+    rev = st.radio(t("Annual Revenue?", "年間売上は？"), ["<500K", "≥500K"])
+    emp = st.slider(t("Number of Employees", "従業員数"), 1, 200, 10)
     docs = st.multiselect(
-        "Documents you have / お持ちの書類",
+        t("Documents you have / お持ちの書類", "Documents you have / お持ちの書類"),
         [
             "Business Plan / 事業計画書",
             "Org Chart / 組織図",
@@ -127,7 +136,7 @@ else:
         ]
     )
 
-    if st.button("Calculate & Download Report"):
+    if st.button(t("Calculate & Download Report", "計算してレポートをダウンロード")):
         score = 0
         score += 15 if age == "≥3 years" else 0
         score += 20 if any(i in industry for i in ["AI", "IoT", "Biotech", "Green Energy"]) else 0
@@ -139,7 +148,7 @@ else:
 
         status = "🟢 Highly Eligible" if score >= 85 else ("🟡 Needs Review" if score >= 65 else "🔴 Not Eligible")
 
-        st.metric("Eligibility Score", f"{score}%")
+        st.metric(t("Eligibility Score", "適格スコア"), f"{score}%")
         st.markdown(f"**{status}**")
 
         pdf = FPDF()
@@ -169,6 +178,6 @@ else:
 
         data = pdf.output(dest="S").encode("latin-1")
         fname = f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-        st.download_button("Download PDF Report", data=data, file_name=fname, mime="application/pdf")
+        st.download_button(t("Download PDF Report", "PDFレポートをダウンロード"), data=data, file_name=fname, mime="application/pdf")
 
 # --- END OF DeloitteSmart™ CLIENT PORTAL CODE ---
