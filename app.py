@@ -3,6 +3,8 @@ import openai
 from datetime import datetime
 from fpdf import FPDF
 import re
+from streamlit_lottie import st_lottie
+import requests
 
 # --- CONFIGURATION ---
 st.set_page_config(
@@ -14,6 +16,15 @@ st.set_page_config(
 
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
+# --- LOAD LOTTIE ANIMATION ---
+def load_lottie_url(url):
+    r = requests.get(url)
+    if r.status_code != 200:
+        return None
+    return r.json()
+
+lottie_ai = load_lottie_url("https://assets10.lottiefiles.com/packages/lf20_touohxv0.json")
+
 # --- PDF CLEANING ---
 def safe_text(txt: str) -> str:
     reps = {'™': '(TM)', '–': '-', '≥': '>=', '✓': 'v', '✔': 'v'}
@@ -21,21 +32,24 @@ def safe_text(txt: str) -> str:
         txt = txt.replace(k, v)
     return txt.encode('latin1', 'ignore').decode('latin1')
 
-# --- REGISTRATION ---
+# --- SESSION DEFAULTS ---
 if "registered" not in st.session_state:
     st.session_state.registered = False
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+if "feedback_entries" not in st.session_state:
+    st.session_state.feedback_entries = []
 
+# --- REGISTRATION ---
 if not st.session_state.registered:
     st.title("Welcome to DeloitteSmart™ Client Portal")
     st.subheader("Register to Get Started")
     name = st.text_input("Your Name (In-charge)", key="name")
     company = st.text_input("Company Name", key="company")
-    address = st.text_area("Company Address (Japanese Format)", placeholder="e.g. 〒100-0005 東京都千代田区丸の内1丁目1-1 パレスビル")
+    address = st.text_area("Company Address (Japanese Format)", placeholder="〒100-0005 東京都千代田区丸の内1丁目1-1 パレスビル")
     email = st.text_input("Your Email (Optional)", key="email")
 
-    next_clicked = st.button("Register and Continue")
-
-    if next_clicked:
+    if st.button("Register and Continue"):
         if not (name and company):
             st.error("Please fill in all required fields: Name and Company.")
         else:
@@ -60,15 +74,13 @@ st.title(f"Hello {st.session_state.user_name}, welcome back!")
 mode = st.radio("Mode:", ["Chat with AI", "Eligibility Self-Check"], index=0)
 
 if mode == "Chat with AI":
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
-
     st.subheader("Ask a question about subsidies")
     q = st.text_input("Your question:")
 
     if st.button("Send") and q:
         prompt = f"You are SubsidySmart™, an expert subsidy advisor. Question: {q}"
-        with st.spinner("AI is responding..."):
+        with st.spinner("🤖 Thinking like an AI consultant..."):
+            st_lottie(lottie_ai, height=200)
             try:
                 resp = openai.chat.completions.create(
                     model="gpt-3.5-turbo",
@@ -82,9 +94,14 @@ if mode == "Chat with AI":
             except Exception as e:
                 st.error(f"Error: {e}")
 
-    for qq, aa in reversed(st.session_state.chat_history):
+    for idx, (qq, aa) in enumerate(reversed(st.session_state.chat_history)):
         st.markdown(f"**You:** {qq}")
         st.markdown(f"**AI:** {aa}")
+        c1, c2 = st.columns([1, 1])
+        if c1.button("👍", key=f"yes{idx}"):
+            st.session_state.feedback_entries.append({"helpful": True, "timestamp": datetime.now().isoformat()})
+        if c2.button("👎", key=f"no{idx}"):
+            st.session_state.feedback_entries.append({"helpful": False, "timestamp": datetime.now().isoformat()})
         st.markdown("---")
 
 else:
@@ -153,3 +170,5 @@ else:
         data = pdf.output(dest="S").encode("latin-1")
         fname = f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
         st.download_button("Download PDF Report", data=data, file_name=fname, mime="application/pdf")
+
+# --- END OF DeloitteSmart™ CLIENT PORTAL CODE ---
